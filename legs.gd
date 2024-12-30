@@ -4,7 +4,9 @@ extends Node3D
 #enables basic, 3D, 3rd Person motion
 
 #walking, running
-@export var walkSpd = 3.0	#basic walking. if no run, mod not this one.
+@export var walkSpd = 3.0	#basic walking speed. Assumes arrow keys to walk.
+@export var runSpd = 5.0	#if no running, can just set this = to walkSpd. Assumes "shift" is run.
+var isRunning = false		#is set to true when holding the run key.
 
 #jumping
 @export var canJump = false		#determines whether or not it will jump at a given input
@@ -13,19 +15,14 @@ extends Node3D
 @export var canMoveMidair = true	#can you change dir while midair?
 
 #inputs
-@export var isPlayerControlled = false #if true, then thiss will listen to inputs
+@export var isPlayerControlled = false #if true, then this will listen to player inputs
 
 #parent
 @onready var dad = self.get_parent()
 var vel:Vector3 #the velocity we will give to the parent
 
 
-# Called when the node enters the scene tree for the first time.
-func _ready():
-	pass # Replace with function body.
 
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	
 	if (isPlayerControlled):
@@ -35,8 +32,10 @@ func _process(delta):
 			var input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 			var direction = (dad.transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 		
+			#running/walking
 			var spd = walkSpd
-			#if running, SPD = runSpd
+			if Input.is_key_pressed(KEY_SHIFT):
+				spd = runSpd
 		
 			if direction:
 				vel.x = direction.x * spd
@@ -53,17 +52,14 @@ func _process(delta):
 				vel.y = jumpSpd
 	
 	#gravity
-	_applyGrav(delta)
+	_applyGrav()
 	
 	#applying everything
-	#vel *= delta
 	dad.velocity = vel
 	dad.move_and_slide()
-	
-	pass
 
 
 #gravity
-func _applyGrav(d):
+func _applyGrav():
 	if !dad.is_on_floor():
 		vel.y -= gravity
