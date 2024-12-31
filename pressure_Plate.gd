@@ -22,10 +22,10 @@ extends Area3D
 ##Does this trigger something only once?
 @export var oneshot = true
 var alreadyShot = false			#if oneshot, prevents a second happening; else, reverses on even triggers
+##Set to 0 for instant transformation. This is how long it'll take.
+@export var timeUntilTransformed = 1.0
 
 @export_subgroup("If repeating...")
-##Set to 0 for instant transformation. This is how long it'll take.
-@export var timeUntilTransformed = 1.0	
 ##after being pressed, must wait this long until it can be pressed again.
 @export var cooldown = 1.0
 var isCool = true			#helper variable for the cooldown.
@@ -69,9 +69,10 @@ func _activateTrigger(calledByReset):
 		o.position -= moveDelta[0]/loops
 		
 		#rotate it
-		o.rotation.x -= deg_to_rad(moveDelta[1].x/loops)
-		o.rotation.y -= deg_to_rad(moveDelta[1].y/loops)
-		o.rotation.z -= deg_to_rad(moveDelta[1].z/loops)
+		o.rotate_x(deg_to_rad(moveDelta[1].x/loops))
+		o.rotate_y(deg_to_rad(moveDelta[1].y/loops))
+		o.rotate_z(deg_to_rad(moveDelta[1].z/loops))
+		
 			#. . . I feel like there's a less repetitive way of doing this...
 		
 		#scale it
