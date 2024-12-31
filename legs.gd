@@ -3,19 +3,26 @@ extends Node3D
 #Child of a CharacterBody3D
 #enables basic, 3D, 3rd Person motion
 
-#walking, running
-@export var walkSpd = 3.0	#basic walking speed. Assumes arrow keys to walk.
-@export var runSpd = 5.0	#if no running, can just set this = to walkSpd. Assumes "shift" is run.
+@export_group("walking, running")
+##Basic walking speed. Assumes arrow keys to walk.
+@export var walkSpd = 3.0
+##If not running, can just set this = to walkSpd. Assumes "shift" is run.
+@export var runSpd = 5.0
 var isRunning = false		#is set to true when holding the run key.
 
-#jumping
-@export var canJump = false		#determines whether or not it will jump at a given input
-@export var jumpSpd = 5			#the initial jump velocity, to be reduced by gravity each frame
-@export var gravity = 0.1635	#9.81/60
-@export var canMoveMidair = true	#can you change dir while midair?
+@export_group("jumping")
+##Determines whether or not it will jump at a given input
+@export var canJump = false
+##The initial jump velocity, to be reduced by gravity each frame
+@export var jumpSpd = 5
+##How much to drop each frame; by default, 9.81/60
+@export var gravity = 0.1635
+##Can you change dir while midair?
+@export var canMoveMidair = true
 
-#inputs
-@export var isPlayerControlled = false #if true, then this will listen to player inputs
+@export_group("Inputs")
+##If true, then this will listen to player inputs
+@export var isPlayerControlled = false
 
 #parent
 @onready var dad = self.get_parent()
