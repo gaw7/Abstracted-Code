@@ -76,9 +76,10 @@ func _process(delta):
 
 
 		#jumping
-		if dad.is_on_floor():
+		if canJump:
 			if Input.is_action_pressed("ui_accept"):
-				vel.y = jumpSpd
+				if dad.is_on_floor():
+					vel.y = jumpSpd
 	
 	#gravity
 	_applyGrav()
