@@ -29,6 +29,22 @@ var isRunning = false		#is set to true when holding the run key.
 var vel:Vector3 #the velocity we will give to the parent
 
 
+#This is to check if using the complimentary Eyes.gd script, found at
+# https://github.com/gaw7/Abstracted-Code/blob/main/eyes.gd
+var eyes = null
+var cam = null
+var usingEyes = false
+
+func _ready() -> void:
+	eyes = get_node("../eyes")
+	
+	#wait a moment, for everything to create
+	await get_tree().create_timer(0.2).timeout
+	if eyes != null:
+		usingEyes = true
+		cam = get_node("../eyes/@Camera3D@4")
+
+
 
 func _process(delta):
 	
@@ -37,7 +53,13 @@ func _process(delta):
 		#lateral motion
 		if dad.is_on_floor() || canMoveMidair:
 			var input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-			var direction = (dad.transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+			var direction
+			
+			if (usingEyes):
+					direction = (cam.transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+			else:
+				direction = (dad.transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+			
 		
 			#running/walking
 			var spd = walkSpd
