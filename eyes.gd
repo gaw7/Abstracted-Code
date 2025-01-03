@@ -1,15 +1,18 @@
 extends Node3D
 #This script is to automatically populate a character's body with a springarm3D, and an attached camera.
 
-#for when the spring gets made.
+#for when these get made.
 var son = null
+var cam = null
+var dummy = null
 
-##Vaguely, where dhould the eyes be?
-@export var targetPos = Vector3(0, 1.25, 0)
+##Vaguely, where should the eyes be?
+@export var EyePoint = Vector3(0, 1.25, 0)
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	_createSpring()
+	_createDummy()
 	_createCam()
 	
 	#for the mouse
@@ -26,15 +29,43 @@ func _createSpring():
 	
 	#transforms
 	s.rotation.x = deg_to_rad(0.0)
-	s.position += targetPos
+	s.position += EyePoint
 	
 	#apply
 	add_child(s)
 	son = s
 
+#creates a target for the camera to lock-onto.
+func _createDummy():
+	var target = Node3D.new()
+	son.add_child(target)
+	dummy = target
+
 func _createCam():
 	var c = Camera3D.new()
-	son.add_child(c)
+	self.add_child(c)
+	cam = c
+	
+	#prevent it from inheriting parent's transforms
+	c.top_level = true
+
+#to automate the camera's movement...
+func _process(_delta):
+	_lerpCamera()
+
+@export var cameraLerpWeight = 0.1
+func _lerpCamera():
+	var x = _calcCamPos(0)
+	var y = _calcCamPos(1)
+	var z = _calcCamPos(2)
+	
+	cam.global_position = Vector3(x,y,z)
+	
+	#also, lookat
+	cam.look_at(self.global_position + EyePoint)
+
+func _calcCamPos(i):
+	return lerpf(cam.global_position[i], dummy.global_position[i], cameraLerpWeight)
 
 
 #for rotating the camera...
