@@ -44,6 +44,7 @@ func _createDummy():
 func _createCam():
 	var c = Camera3D.new()
 	self.add_child(c)
+	c.name = "eyesCam"
 	cam = c
 	
 	#prevent it from inheriting parent's transforms
