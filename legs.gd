@@ -42,7 +42,7 @@ func _ready() -> void:
 	await get_tree().create_timer(0.2).timeout
 	if eyes != null:
 		usingEyes = true
-		cam = get_node("../eyes/@Camera3D@4")
+		cam = get_node("../eyes/eyesCam")
 
 
 
