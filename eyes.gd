@@ -83,6 +83,7 @@ enum CamType {AlwaysForward, RotateAround}
 
 
 func _input(event: InputEvent) -> void:
+	#move the camera with mouse motion
 	if event is InputEventMouseMotion:
 		
 		var RotateAroundY = deg_to_rad(-event.relative.x * camSens.x)
@@ -94,13 +95,33 @@ func _input(event: InputEvent) -> void:
 		elif CameraMode == CamType.RotateAround:
 			_rotY(self, RotateAroundY)
 			_rotX(son, RotateAroundX)
+	
+	
+	#ain't no way this is the official documentation for this...
+	#LISTEN,... just create a custom action at this point, and then use
+	#event.is_action_pressed([action name])
+	elif event is InputEventKey && event.pressed:
+		
+		#in the meantime, though, I guess this is where I'll put all my
+		#button/key-related inputs for cameras...
+		if event.keycode == KEY_Z:
+			_recenterCam()
 
 
 func _rotY(axis, rad):
 	axis.rotate_y(rad)
 
 func _rotX(axis, dY):
-	#var dY = -event.relative.y * camSens.y
 	if camLevel+dY >-camLimit && camLevel+dY < camLimit:
 		camLevel+=dY
 		axis.rotate_x(deg_to_rad(dY))
+
+#exactly what it says on the tin.
+func _recenterCam():	
+	var ry = rotation.y
+	
+	rotate_y(-ry)
+	rotation_degrees.x = -10
+
+#func _lockon(target):
+	#pass
