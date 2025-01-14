@@ -11,17 +11,33 @@ var labelMsg
 var bg
 ##which conversation will happen? This is a dialogue_manager, btw.
 var convers:Node
+##what index of the conversation?
+var ndx = 0
+
+#helps determine when to open a nwe convo, or else just continue the current one
+var isTalking = false
+var buttonTalk = "KEY_T"
 
 
-#just for testing
-func _ready() -> void:
-	_beginConversation()
+
 
 
 func _beginConversation() -> void:
+	isTalking = true
 	_createLabels()
-	_findConversation(0)
-	_readConversation(convers)
+	_findConversation(0)	#replace with path?
+	ndx = 0
+	_nextLine()
+
+func _nextLine():
+		
+	#check for end of convo
+	if ndx == convers.dialogue.size():
+		_finishConversation()
+	
+	else:
+		_readConversation(convers)
+		ndx += 1
 
 func _createLabels():
 	var rez = get_viewport().get_visible_rect().size
@@ -56,6 +72,10 @@ func _createLabels():
 	
 	#change size
 	labelMsg.size = Vector2(rez.x - 40, rez.y / 3 - labelName.size.y)
+	
+	#test
+	#for i in get_children():
+	#	print(i.name)
 
 
 func _findConversation(conversationIndex):
@@ -63,14 +83,15 @@ func _findConversation(conversationIndex):
 	convers = get_child(conversationIndex)
 
 func _readConversation(c):
-	for i in c.dialogue.size():
-		labelName.text = c._parseDialogue(i, true)
-		labelMsg.text = c._parseDialogue(i, false)
-		
-		#wait a moment, so we can at least see it
-		await get_tree().create_timer(4.0).timeout
-		
-	_finishConversation()
+	#for i in c.dialogue.size():
+		#labelName.text = c._parseDialogue(i, true)
+		#labelMsg.text = c._parseDialogue(i, false)
+		#
+		##wait a moment, so we can at least see it
+		#await get_tree().create_timer(4.0).timeout
+	
+	labelName.text = c._parseDialogue(ndx, true)
+	labelMsg.text = c._parseDialogue(ndx, false)
 
 
 func _finishConversation():
@@ -78,3 +99,17 @@ func _finishConversation():
 	labelMsg.free()
 	bg.free()
 	convers = null
+	isTalking = false
+
+
+#this is somewhat for a way to test the code, ngl.
+func _input(event: InputEvent) -> void:
+	
+	if event is InputEventKey && event.pressed:
+		#for 'Talk'
+		if event.keycode == KEY_T:
+			print("T")
+			if isTalking:
+				_nextLine()
+			else:
+				_beginConversation()
