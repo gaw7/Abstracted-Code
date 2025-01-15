@@ -1,5 +1,5 @@
-extends Control
-
+extends Resource
+class_name Conversation
 
 ##IMPORTANT: each element must be in the syntax of   Speaker::Message
 ##If this isn't done, it won't parse correctly.
