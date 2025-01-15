@@ -10,11 +10,11 @@ var labelMsg
 ##Is the background to be made. But ISN'T the background's image.
 var bg
 ##which conversation will happen? This is a dialogue_manager, btw.
-var convers:Node
+@export var convers:Resource
 ##what index of the conversation?
 var ndx = 0
 
-#helps determine when to open a nwe convo, or else just continue the current one
+#helps determine when to open a new convo, or else just continue the current one
 var isTalking = false
 var buttonTalk = "KEY_T"
 
@@ -25,7 +25,9 @@ var buttonTalk = "KEY_T"
 func _beginConversation() -> void:
 	isTalking = true
 	_createLabels()
-	_findConversation(0)	#replace with path?
+	
+	#convers should be given a conversation to be had, already.
+	
 	ndx = 0
 	_nextLine()
 
@@ -33,7 +35,7 @@ func _nextLine():
 		
 	#check for end of convo
 	if ndx == convers.dialogue.size():
-		_finishConversation()
+		_finishWithConversation()
 	
 	else:
 		_readConversation(convers)
@@ -78,27 +80,39 @@ func _createLabels():
 	#	print(i.name)
 
 
-func _findConversation(conversationIndex):
-	#temporary
-	convers = get_child(conversationIndex)
+#used to supply the conversation...
+#imagine a signpost, with an area around it.
+#while the player character is close enough, it will say, "read".
+#So long as the player is within this radius, the sign's dialogue is supplied to this menu.
+func _supplyConversation(convo):
+	convers = convo
 
+#parses the dialogue, sticks it into the appropriate text boxes
 func _readConversation(c):
-	#for i in c.dialogue.size():
-		#labelName.text = c._parseDialogue(i, true)
-		#labelMsg.text = c._parseDialogue(i, false)
-		#
-		##wait a moment, so we can at least see it
-		#await get_tree().create_timer(4.0).timeout
-	
 	labelName.text = c._parseDialogue(ndx, true)
 	labelMsg.text = c._parseDialogue(ndx, false)
 
-
+#used to reset everything, sets convers to null
 func _finishConversation():
-	labelName.free()
-	labelMsg.free()
-	bg.free()
+	if labelName != null:
+		labelName.free()
+	if labelMsg != null:
+		labelMsg.free()
+	if bg != null:
+		bg.free()
 	convers = null
+	isTalking = false
+
+#Resets everything, preserves convers. Like, for say, when you're close enough to
+#read a sign, and finish reading through it... but wanna read it again.
+func _finishWithConversation():
+	if labelName != null:
+		labelName.free()
+	if labelMsg != null:
+		labelMsg.free()
+	if bg != null:
+		bg.free()
+	#convers = null
 	isTalking = false
 
 
@@ -106,10 +120,10 @@ func _finishConversation():
 func _input(event: InputEvent) -> void:
 	
 	if event is InputEventKey && event.pressed:
-		#for 'Talk'
+		#'T' for 'Talk'
 		if event.keycode == KEY_T:
-			print("T")
-			if isTalking:
-				_nextLine()
-			else:
-				_beginConversation()
+			if convers != null:
+				if isTalking:
+					_nextLine()
+				else:
+					_beginConversation()
