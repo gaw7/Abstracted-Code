@@ -1,112 +1,95 @@
 extends Area3D
-#Have you ever played a game where something happens when you walk onto a button or pressure plate?
-#Or how about when you go into a certain hallway, and something happens?
-#This code is for things like that. It's to be put on the root, so the exported variables can be customized per instance.
 
+@export_category("The trigger and object")
 
+##What group should this check for to activate?
+##Can be a player to activate as a trigger or pressure plate, or a
+##weapon/projectile to act as a target.
+@export var group:String = "playerGroup"
 
+##What object gets moved/transformed from this?
+@export var activatee:Node3D = null
 
-#the objects to be manipulated (moved, rotated, scaled. In that order).
-@export_group("Must Be Set")
-##Gets the in-tree object to manipulate on trigger
-@export var objToMove: NodePath	
-##How to move/rotate/scale the object, on trigger?
-@export var moveDelta = [Vector3.ZERO, Vector3.ZERO, Vector3.ZERO]
-##This is a list of strings. Whenever a body enters this, it will check what groups it's in.
-##If ANY of those groups match with ANY of the strings in this variable, it will trigger this... hopefully~
-@export var groupsThatCanTrigger = []
+@export_category("The motion of the object")
 
+##how fast should it move?
+@export var activateeSpd:float = 1.0
 
+##used for update function
+var isActive:bool = false
 
-@export_group("Repetition?")
-##Does this trigger something only once?
-@export var oneshot = true
-var alreadyShot = false			#if oneshot, prevents a second happening; else, reverses on even triggers
-##Set to 0 for instant transformation. This is how long it'll take.
-@export var timeUntilTransformed = 1.0
+##Will move to this position.
+##FOR THE SAKE OF THIS FIRST TRY (technically 2nd, but whatever),
+##this will be in LOCAL SPACE
+@export var translation:Vector3 = Vector3.ZERO
 
-@export_subgroup("If repeating...")
-##after being pressed, must wait this long until it can be pressed again.
-@export var cooldown = 1.0
-var isCool = true			#helper variable for the cooldown.
-##After the transformation is complete, after this long, object will revert back. RECOMMENDED to be longer than the cooldown time.
-@export var timeUntilReset = 0.0
+##Translation, but for rotation
+@export var rot = Vector3.ZERO
 
+##the original position. Used to not Lerp motion, and to return to the original spot.
+var ogLoc:Vector3
 
+##the world-space coordinates where this is supposed to go when activated
+var destinedLoc:Vector3
 
-func _on_body_entered(body):
-	if !alreadyShot || !oneshot:	#either it hasn't been done, or it can be done multiple times.
-		
-		#is it the right guy?
-		if _shouldTrigger(body):
+@export_category("Reversing the motion")
+
+##Should it only be for so long, and then revert?
+@export var waitForReverse:float = 0.0
+
+##used to track reverse motion
+var isReversing:bool = false
+
+func _ready() -> void:
+	#set the default values
+	ogLoc = activatee.global_position
+	destinedLoc = ogLoc + translation
+
+func _on_body_entered(body: Node3D) -> void:
+	#check for group
+	if body.is_in_group(group):
+		_activatePlate()
+
+func _activatePlate():
+	isActive = true
+
+func _process(delta: float) -> void:
+	if isActive:
+		if !isReversing:
+			#translate the thing
+			#activatee.translate(translation * delta * activateeSpd)
+			activatee.global_translate(translation * delta * activateeSpd)
 			
-			#is the cooldown ready?
-			if isCool:
-				_activateTrigger(false)
-				alreadyShot = true
-	_reversePolarity()
+			#rotate the thing
+			_rotateThing(rot)
+			
+			if translation != Vector3.ZERO:
+				if activatee.global_position.distance_to(destinedLoc) <= 0.1:
+					isActive = false
+					activatee.global_position = destinedLoc
+					
+					_checkReversal()
+		else:
+			#that is, IS reversing
+			activatee.global_translate(-translation * delta * activateeSpd)
+			
+			_rotateThing(-rot)
+			
+			#check if should end it, without checking reversal
+			if translation != Vector3.ZERO:
+				if activatee.global_position.distance_to(ogLoc) <= 0.1:
+					isActive = false
+					isReversing = false
+					activatee.position = ogLoc
 
 
-#returns bool. Called each time *something* enters the collider. If that is in one of the groups, true.
-func _shouldTrigger(b):
-	for groups in groupsThatCanTrigger:
-		if b.is_in_group(groups):
-			return true
-	return false
+func _rotateThing(v:Vector3):
+	activatee.rotate_x(deg_to_rad(v.x))
+	activatee.rotate_y(deg_to_rad(v.y))
+	activatee.rotate_z(deg_to_rad(v.z))
 
-
-#moves the things by the sepcified amount
-func _activateTrigger(calledByReset):
-	#print("Done")
-	var o = get_node(objToMove)
-	
-	#loop it for time
-	var loops = Engine.get_frames_per_second()
-	for i in loops:
-		#all of these are -=, instead of +=, because _reversePolarity happens so fast.
-		
-		#move it
-		o.position -= moveDelta[0]/loops
-		
-		#rotate it
-		o.rotate_x(deg_to_rad(moveDelta[1].x/loops))
-		o.rotate_y(deg_to_rad(moveDelta[1].y/loops))
-		o.rotate_z(deg_to_rad(moveDelta[1].z/loops))
-		
-			#. . . I feel like there's a less repetitive way of doing this...
-		
-		#scale it
-		o.scale -= moveDelta[2]/loops
-		
-		#wait for it
-		await get_tree().create_timer(timeUntilTransformed/loops).timeout
-	#end of loop
-	
-	
-	if (!oneshot):
-		_performCooldown()
-		
-		if !calledByReset && timeUntilReset != 0:
-			_performReset()
-
-#if something is triggered, it goes according to settings.
-#But then, if it goes off a second time, maybe it should go back to before.
-#Think of this like an elevator; push the button, it goes up; push again, and it comes back down.
-func _reversePolarity():
-	moveDelta[0] *= -1
-	moveDelta[1] *= -1
-	moveDelta[2] *= -1
-
-
-#literally cleanup for repeating the trigger function, called only if not oneshot.
-func _performCooldown():
-	#cooldown
-	isCool = false
-	await get_tree().create_timer(cooldown).timeout
-	isCool = true
-
-#"tick tock... oops! Didn't get there in time, so it's back to the start..."
-func _performReset():
-	await get_tree().create_timer(timeUntilReset).timeout
-	_reversePolarity()
-	_activateTrigger(true)
+func _checkReversal():
+	if waitForReverse > 0.0:
+		await get_tree().create_timer(waitForReverse).timeout
+		isReversing = true
+		isActive = true
