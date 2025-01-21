@@ -16,6 +16,9 @@ extends StaticBody3D
 ##If there is a Label3D attached to this, saying something like "Read". Assumed child.
 @onready var lab:Label3D = self.get_node("Label3D")
 
+##What the sign's Label3D will say when the player character is close enough
+@export var billboard:String = "Read"
+
 
 func _on_read_rad_body_entered(body: Node3D) -> void:
 	#check if it's the player
@@ -24,7 +27,7 @@ func _on_read_rad_body_entered(body: Node3D) -> void:
 		
 		#display the text (this is a really roundabout way of doing it.
 		if lab != null:
-			lab.text = "Read"
+			lab.text = billboard
 
 
 func _on_read_rad_body_exited(body: Node3D) -> void:
