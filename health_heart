@@ -1,0 +1,135 @@
+extends Control
+#Is HP and health script, so named because of the tendency to display HP as Hearts.
+
+@export_category("Visuals")
+
+var displayObject	#leaving this one untyped
+enum dT {Hearts, Healthbar}
+##bar graph? or chunks? (Metroid-style?)
+@export var displayType: dT = dT.Hearts
+##what textures to use?
+@export var bottomText:Texture2D
+@export var progressText:Texture2D
+##this is the number of divisions in each visual heart-piece.
+@export var chunks:int = 5
+
+@export_category("Health")
+##how much total HP does the character have?
+@export var maxHP = 20
+##How much HP does the character currently have?
+@export var HP = 15
+
+##heart-pieces?
+
+##full HP on HP-Up?
+
+@export_category("Death and Damage")
+
+##defense as a multiplier to oncoming damage
+@export var defMult = 1
+##At what Y-Level or Distance does the character perish?
+@export var yLevelDeath:float = -999.0
+
+
+
+#--------------------------common functions-----------------------------------
+
+#healing/damage
+func _takeDamage(dmg):
+	#is it healing?
+	if dmg < 0:
+		#that is, healing
+		HP -= dmg
+		if HP > maxHP:
+			HP = maxHP
+	else:
+		#that is, damage
+		HP -= dmg * defMult
+	_updateVis()
+
+#increase max hp
+func _maxHPup(amt):
+	maxHP += amt
+		#Totally optional, this v
+	HP = maxHP
+	_updateVis()
+
+#----------------------------initialization---------------------------------
+
+func _ready() -> void:
+	_createVisuals()
+	_updateVis()
+
+func _createVisuals():
+	#viewport stuff
+	var rez = get_viewport().get_visible_rect().size
+	var rect = TextureRect.new()
+	add_child(rect)
+	rect.set_position(Vector2.ZERO)
+	rect.set_size(Vector2(rez.x/2, rez.y/5))
+	
+	
+	if displayType == dT.Hearts:
+		_createHearts(rect)
+	elif displayType == dT.Healthbar:
+		pass
+
+func _createHearts(rect):
+	
+	#how much space between hearts
+	var twixt = 10
+	
+	#how big is each one?
+	var res = rect.size/9.6
+	
+	#And Now, to set it...
+	displayObject = []
+	
+	#making the things
+	var totalHearts = ceil(maxHP/chunks)
+	for i in totalHearts:
+		var h = TextureProgressBar.new()
+		h.fill_mode = TextureProgressBar.FillMode.FILL_COUNTER_CLOCKWISE
+		h.texture_under = bottomText
+		h.texture_progress = progressText
+		add_child(h)
+		
+		h.position.x += i * (twixt + res.x)
+		#h.scale = Vector2(64, 64)
+		
+		#setting min/max
+		h.min_value = i * chunks
+		h.max_value = h.min_value + chunks
+		
+		displayObject.append(h)
+
+#func _createBar():
+#pass #(later...)
+
+#--------------------------checking / updating------------------------------
+
+
+func _process(_delta):
+	#checking for death
+	if get_parent().global_position.y <= yLevelDeath:
+		_takeDamage(maxHP)
+
+func _updateVis():
+	
+	if displayType == dT.Hearts:
+		
+		for i in displayObject:
+			var ival = i.value
+			
+			#HP higher than current heart
+			if HP > i.max_value:
+				i.value = i.max_value
+			elif HP <= i.max_value:
+				i.value = HP
+	
+	#check for death, too.
+	if HP <= maxHP:
+		_die()
+
+func _die():
+	pass
