@@ -17,6 +17,10 @@ var isRunning = false		#is set to true when holding the run key.
 @export var jumpSpd = 5
 ##How much to drop each frame; by default, 9.81/60
 @export var gravity = 0.1635
+##... this one is... probably not gonna be needed. Basically, how big is gravity allowed to get.
+##Head-down skydiving? ~95m/s, or 1.5833m/frame.
+##Or, ~12 seconds to reach. So, at the default gravity, 9.81*12= 117.72
+@export var terminalVelocity = 100
 ##Can you change dir while midair?
 @export var canMoveMidair = true
 
@@ -28,21 +32,29 @@ var isRunning = false		#is set to true when holding the run key.
 @onready var dad = self.get_parent()
 var vel:Vector3 #the velocity we will give to the parent
 
+##the character skin
+@export var skin:Node3D
+
 
 #This is to check if using the complimentary Eyes.gd script, found at
 # https://github.com/gaw7/Abstracted-Code/blob/main/eyes.gd
 var eyes = null
 var cam = null
 var usingEyes = false
+#var usingRotAround = false
 
 func _ready() -> void:
 	eyes = get_node("../eyes")
 	
 	#wait a moment, for everything to create
-	await get_tree().create_timer(0.2).timeout
+	await get_tree().create_timer(0.1).timeout
+	
+	#check for eyes
 	if eyes != null:
 		usingEyes = true
 		cam = get_node("../eyes/eyesCam")
+		#if eyes.CameraMode == eyes.CamType.RotateAround:
+			#usingRotAround = true
 
 
 
@@ -69,14 +81,27 @@ func _process(delta):
 			if direction:
 				vel.x = direction.x * spd
 				vel.z = direction.z * spd
-				#visuals.look_at(direction + position)
+				
+				#change the direction the skin is facing
+				#if strafing, do this   v
+				#skin.rotation_degrees.y = cam.rotation_degrees.y
+				
+				#if not strafing, do this    v
+				var d = Vector3(1,0,1) * direction + skin.global_position
+				#var l = lerp(skin.global_position + Vector3(0,0,-1), d, 0.2)
+				skin.look_at(d)
+				#skin.rotation_degrees *=  Vector3(0,1,0)
+				
+				
+				
 			else:
 				vel.x = move_toward(vel.x, 0, spd)
 				vel.z = move_toward(vel.z, 0, spd)
 
 
 		#jumping
-		if canJump:
+					#NOTE: For whatever reason, doesn't work when going up-left or down-right.
+		if canJump: #that is, if jumping is allowed in this game.
 			if Input.is_action_pressed("ui_accept"):
 				if dad.is_on_floor():
 					vel.y = jumpSpd
@@ -93,3 +118,7 @@ func _process(delta):
 func _applyGrav():
 	if !dad.is_on_floor():
 		vel.y -= gravity
+		
+		#terminal velocity
+		if vel.y < -terminalVelocity:
+			vel.y = -terminalVelocity
